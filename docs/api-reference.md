@@ -114,6 +114,39 @@ com.huydungktv.invoice.api.InvoiceResponse
 com.huydungktv.invoice.service.InvoiceCalculator
 com.huydungktv.invoice.service.DefaultInvoiceCalculator
 com.huydungktv.invoice.exception.InvoiceValidationException
+com.huydungktv.invoice.mapper.InvoiceCsvMapper
 ```
 
 Các class trong `validation`, `mapper` và `spi` là điểm mở rộng nội bộ hoặc dành cho các phiên bản tích hợp sau; không nên tự tạo dependency vào class chưa được ghi trong danh sách public API.
+
+## InvoiceCsvMapper
+
+Chuyển `InvoiceResponse` thành nội dung CSV:
+
+```java
+public String toCsv(InvoiceResponse invoice)
+```
+
+Ví dụ:
+
+```java
+InvoiceCsvMapper mapper = new InvoiceCsvMapper();
+String csvContent = mapper.toCsv(invoiceResponse);
+```
+
+Format CSV cố định có các cột:
+
+```text
+rowType,itemName,quantity,price,vat,priceVat,subTotal,subTotalVat,total,totalPriceVat,totalVat
+```
+
+Quy tắc dòng:
+
+- `ITEM`: điền `itemName`, `quantity`, `price`, `vat`, `priceVat`, `subTotal` và `subTotalVat`; các cột tổng để trống.
+- `TOTAL`: các cột item để trống; điền `total`, `totalPriceVat` và `totalVat`.
+- Dòng kết thúc dùng CRLF (`\\r\\n`).
+- Giá trị chứa dấu phẩy, dấu nháy kép hoặc xuống dòng được bọc bằng dấu nháy kép.
+- Dấu nháy kép bên trong giá trị được escape thành hai dấu nháy kép.
+- Nếu truyền `null` cho `invoice`, method ném `NullPointerException`.
+
+API chỉ trả về nội dung CSV dạng `String`; việc chọn encoding, tên file và nơi lưu file thuộc về ứng dụng khách hàng.

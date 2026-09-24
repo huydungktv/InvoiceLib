@@ -217,9 +217,35 @@ com.huydungktv.invoice.api.InvoiceResponse
 com.huydungktv.invoice.service.InvoiceCalculator
 com.huydungktv.invoice.service.DefaultInvoiceCalculator
 com.huydungktv.invoice.exception.InvoiceValidationException
+com.huydungktv.invoice.mapper.InvoiceCsvMapper
 ```
 
 Khuyến nghị sử dụng interface `InvoiceCalculator` trong code ứng dụng và chỉ khởi tạo `DefaultInvoiceCalculator` tại composition root hoặc cấu hình dependency injection của ứng dụng khách hàng.
+
+## Chuyển output hóa đơn thành CSV
+
+`InvoiceCsvMapper` chuyển một `InvoiceResponse` thành nội dung CSV dạng `String`:
+
+```java
+InvoiceCsvMapper csvMapper = new InvoiceCsvMapper();
+String csvContent = csvMapper.toCsv(invoice);
+```
+
+Thư viện không tự ghi file. Ứng dụng khách hàng có thể tự lưu nội dung này:
+
+```java
+Files.writeString(Path.of("invoice.csv"), csvContent, StandardCharsets.UTF_8);
+```
+
+CSV gồm dòng header, các dòng `ITEM` và một dòng `TOTAL`:
+
+```text
+rowType,itemName,quantity,price,vat,priceVat,subTotal,subTotalVat,total,totalPriceVat,totalVat
+ITEM,Laptop,2,1000.00,10,200.00,2000.00,2200.00,,,
+TOTAL,,,,,,,,2000.00,200.00,2200.00
+```
+
+Giá trị `itemName` có dấu phẩy, dấu nháy kép hoặc xuống dòng sẽ được escape theo chuẩn CSV.
 
 ## Cấu trúc project
 
