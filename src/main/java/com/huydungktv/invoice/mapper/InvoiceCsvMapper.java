@@ -12,6 +12,13 @@ public class InvoiceCsvMapper {
     private static final String HEADER = "rowType,itemName,quantity,price,vat,priceVat,subTotal,subTotalVat,total,totalPriceVat,totalVat";
     private static final Logger LOGGER = Logger.getLogger(InvoiceCsvMapper.class.getName());
 
+    /**
+     * Converts an invoice response to CSV content.
+     *
+     * @param invoice invoice response to convert
+     * @return CSV content containing item rows and one total row
+     * @throws NullPointerException if invoice is null
+     */
     public String toCsv(InvoiceResponse invoice) {
         Objects.requireNonNull(invoice, "invoice must not be null");
 
@@ -57,6 +64,12 @@ public class InvoiceCsvMapper {
         return csv.toString();
     }
 
+    /**
+     * Builds one CSV row from the provided values.
+     *
+     * @param values values to write into the CSV row
+     * @return one escaped CSV row followed by the configured line separator
+     */
     private String row(Object... values) {
         StringJoiner row = new StringJoiner(",");
         for (Object value : values) {
@@ -65,6 +78,12 @@ public class InvoiceCsvMapper {
         return row + LINE_SEPARATOR;
     }
 
+    /**
+     * Escapes a value according to CSV quoting rules.
+     *
+     * @param value value to escape
+     * @return escaped value, quoted when it contains CSV special characters
+     */
     private String escape(String value) {
         if (value.indexOf(',') >= 0 || value.indexOf('"') >= 0
                 || value.indexOf('\r') >= 0 || value.indexOf('\n') >= 0) {

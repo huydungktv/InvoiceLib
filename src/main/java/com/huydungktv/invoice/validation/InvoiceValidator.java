@@ -7,6 +7,12 @@ import java.math.BigDecimal;
 import java.util.List;
 
 public class InvoiceValidator {
+    /**
+     * Validates all items in an invoice.
+     *
+     * @param items invoice items to validate
+     * @throws InvoiceValidationException if the list or any item is invalid
+     */
     public void validate(List<InvoiceItemRequest> items) {
         if (items == null || items.isEmpty()) {
             throw new InvoiceValidationException("Invoice must contain at least one item");
@@ -21,6 +27,13 @@ public class InvoiceValidator {
         }
     }
 
+    /**
+     * Validates the required fields of one invoice item.
+     *
+     * @param item invoice item to validate
+     * @param index item position used in validation messages
+     * @throws InvoiceValidationException if any item field is invalid
+     */
     private void validateItem(InvoiceItemRequest item, int index) {
         String fieldPrefix = "Item at index " + index + ": ";
         if (item.itemName() == null || item.itemName().isBlank()) {
@@ -31,6 +44,14 @@ public class InvoiceValidator {
         validateNonNegative(item.vat(), fieldPrefix + "vat", false);
     }
 
+    /**
+     * Validates that a numeric value is present and is not negative.
+     *
+     * @param value numeric value to validate
+     * @param fieldName field name used in the validation message
+     * @param mustBePositive whether the value must be greater than zero
+     * @throws InvoiceValidationException if the value is null or invalid
+     */
     private void validateNonNegative(BigDecimal value, String fieldName, boolean mustBePositive) {
         if (value == null) {
             throw new InvoiceValidationException(fieldName + " is required");

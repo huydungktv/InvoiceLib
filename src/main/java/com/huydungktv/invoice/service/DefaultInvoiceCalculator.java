@@ -27,6 +27,13 @@ public class DefaultInvoiceCalculator implements InvoiceCalculator {
         this.validator = validator;
     }
 
+    /**
+     * Calculates each invoice item and the totals for the complete invoice.
+     * @param items list of invoice items; must not be null or empty
+     * @return calculated item details and invoice totals
+     * @throws com.huydungktv.invoice.exception.InvoiceValidationException
+     *         if the list or any item contains invalid data
+     */
     @Override
     public InvoiceResponse calculate(List<InvoiceItemRequest> items) {
         validator.validate(items);
@@ -83,6 +90,12 @@ public class DefaultInvoiceCalculator implements InvoiceCalculator {
             return response;
     }
 
+    /**
+     * Rounds a monetary value to two decimal places.
+     *
+     * @param value monetary value to round
+     * @return value rounded using {@link RoundingMode#HALF_UP}
+     */
     private BigDecimal money(BigDecimal value) {
         return value.setScale(MONEY_SCALE, MONEY_ROUNDING);
     }

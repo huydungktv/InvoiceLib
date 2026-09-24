@@ -26,6 +26,14 @@ public class InvoicePdfMapper {
     private static final float PAGE_HEIGHT = PDRectangle.A4.getHeight();
     private static final float ROW_HEIGHT = 18;
 
+    /**
+     * Converts an invoice response to a PDF document.
+     *
+     * @param invoice invoice response to convert
+     * @return generated invoice number and PDF content
+     * @throws NullPointerException if invoice is null
+     * @throws InvoicePdfException if the PDF cannot be created
+     */
     public InvoicePdfResult toPdf(InvoiceResponse invoice) {
         Objects.requireNonNull(invoice, "invoice must not be null");
 
@@ -58,12 +66,26 @@ public class InvoicePdfMapper {
         }
     }
 
+    /**
+     * Writes the PDF title and invoice number.
+     *
+     * @param content PDF content stream
+     * @param invoiceNumber generated invoice number
+     * @throws IOException if the PDF content cannot be written
+     */
     private void drawHeader(PDPageContentStream content, String invoiceNumber) throws IOException {
         write(content, "INVOICE", MARGIN, PAGE_HEIGHT - 55, 18, PDType1Font.HELVETICA_BOLD);
         write(content, "Invoice number: " + invoiceNumber,
                 MARGIN, PAGE_HEIGHT - 78, 10, PDType1Font.HELVETICA);
     }
 
+    /**
+     * Writes the invoice item headers and item rows.
+     *
+     * @param content PDF content stream
+     * @param invoice invoice response containing item details
+     * @throws IOException if the PDF content cannot be written
+     */
     private void drawItems(PDPageContentStream content, InvoiceResponse invoice) throws IOException {
         float y = PAGE_HEIGHT - 115;
         String[] headers = {"Item", "Qty", "Price", "VAT %", "VAT amount", "Before VAT", "After VAT"};
@@ -87,6 +109,13 @@ public class InvoicePdfMapper {
         }
     }
 
+    /**
+     * Writes the invoice totals at the bottom of the page.
+     *
+     * @param content PDF content stream
+     * @param invoice invoice response containing total amounts
+     * @throws IOException if the PDF content cannot be written
+     */
     private void drawTotals(PDPageContentStream content, InvoiceResponse invoice) throws IOException {
         float x = PAGE_WIDTH - MARGIN - 220;
         float y = 145;
@@ -95,6 +124,17 @@ public class InvoicePdfMapper {
         write(content, "Total after VAT: " + invoice.totalVat(), x, y - 40, 11, PDType1Font.HELVETICA_BOLD);
     }
 
+    /**
+     * Writes one row of values at the specified PDF position.
+     *
+     * @param content PDF content stream
+     * @param values row values to write
+     * @param widths column widths
+     * @param x starting horizontal position
+     * @param y vertical position
+     * @param header whether the row is a header row
+     * @throws IOException if the PDF content cannot be written
+     */
     private void drawRow(PDPageContentStream content, String[] values, float[] widths,
                          float x, float y, boolean header) throws IOException {
         float currentX = x;
@@ -106,6 +146,17 @@ public class InvoicePdfMapper {
         }
     }
 
+    /**
+     * Writes one text value using the selected font and position.
+     *
+     * @param content PDF content stream
+     * @param text text to write
+     * @param x horizontal position
+     * @param y vertical position
+     * @param fontSize text font size
+     * @param font PDF font
+     * @throws IOException if the PDF content cannot be written
+     */
     private void write(PDPageContentStream content, String text, float x, float y,
                        float fontSize, PDType1Font font) throws IOException {
         content.beginText();
@@ -115,6 +166,12 @@ public class InvoicePdfMapper {
         content.endText();
     }
 
+    /**
+     * Converts null and unsupported characters into PDF-safe text.
+     *
+     * @param text text to sanitize
+     * @return text supported by the configured PDF font
+     */
     private String safeText(String text) {
         if (text == null) {
             return "";
