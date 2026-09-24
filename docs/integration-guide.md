@@ -1,3 +1,116 @@
 # Integration Guide
 
-Nội dung sẽ được bổ sung.
+## Mục tiêu tích hợp
+
+Ứng dụng khách hàng nhúng InvoiceLib như một dependency và gọi trực tiếp service tính hóa đơn. InvoiceLib không chạy độc lập và không cung cấp REST controller.
+
+```text
+Ứng dụng khách hàng
+	|
+	v
+Mapper của ứng dụng khách hàng
+	|
+	v
+InvoiceItemRequest
+	|
+	v
+InvoiceCalculator
+	|
+	v
+InvoiceResponse
+	|
+	v
+Mapper / persistence / API của ứng dụng khách hàng
+```
+
+## Phân tách model
+
+Không nên truyền domain object của khách hàng trực tiếp vào logic nội bộ. Hãy map object đó sang `InvoiceItemRequest` ở boundary:
+
+```java
+InvoiceItemRequest request = new InvoiceItemRequest(
+	customerItem.name(),
+	customerItem.quantity(),
+	customerItem.unitPriceBeforeVat(),
+	customerItem.vatPercent()
+);
+
+InvoiceResponse response = calculator.calculate(List.of(request));
+```
+
+Sau khi tính xong, map `InvoiceResponse` sang model của khách hàng hoặc response API riêng. Cách này giúp InvoiceLib không phụ thuộc vào tên field, annotation hoặc framework của từng khách hàng.
+
+## Tích hợp Maven
+
+```xml
+<dependency>
+    <groupId>com.huydungktv</groupId>
+    <artifactId>invoicelib</artifactId>
+    <version>0.0.1</version>
+</dependency>
+```
+
+Đảm bảo runtime của ứng dụng dùng Java 21 hoặc tương thích với bytecode Java 21.
+
+## Quản lý instance
+
+`DefaultInvoiceCalculator` không giữ state của hóa đơn giữa các lần gọi. Có thể tạo một instance dùng chung trong ứng dụng:
+
+```java
+@ApplicationScoped
+public class InvoiceService {
+    private final InvoiceCalculator calculator = new DefaultInvoiceCalculator();
+}
+```
+
+Annotation trong ví dụ thuộc framework của ứng dụng khách hàng, không thuộc InvoiceLib. Nếu framework có dependency injection, đăng ký `InvoiceCalculator` bằng cấu hình của framework đó.
+
+## Lưu kết quả
+
+InvoiceLib chỉ trả về kết quả tính toán và không lưu dữ liệu. Ứng dụng khách hàng nên:
+
+- Lưu input gốc nếu cần audit.
+- Lưu output đã tính cùng version thư viện.
+- Quyết định định dạng tiền tệ và currency code ở domain của mình.
+- Không dùng số tiền đã format thành String để thực hiện phép tính tiếp theo.
+
+## Tích hợp API HTTP
+
+Nếu ứng dụng có REST API, controller nên nhận request model riêng rồi chuyển đổi sang InvoiceLib:
+
+```java
+public InvoiceHttpResponse calculate(InvoiceHttpRequest request) {
+    List<InvoiceItemRequest> items = request.items().stream()
+	    .map(item -> new InvoiceItemRequest(
+		    item.name(),
+		    item.quantity(),
+		    item.price(),
+		    item.vat()))
+	    .toList();
+
+    InvoiceResponse response = calculator.calculate(items);
+    return InvoiceHttpResponse.from(response);
+}
+```
+
+Không đưa web dependency vào InvoiceLib core chỉ để phục vụ controller của một ứng dụng.
+
+## Versioning và bàn giao
+
+- Pin version cụ thể trong ứng dụng khách hàng, không dùng version động.
+- Đọc `CHANGELOG.md` trước khi nâng version.
+- Chạy test của ứng dụng khách hàng sau khi nâng version.
+- Kiểm tra các giá trị biên: VAT 0%, VAT phân số, giá trị tiền có nhiều chữ số và nhiều item.
+- Lưu lại JAR, checksum và version trong artifact repository nếu bàn giao offline.
+
+## Các tích hợp chưa có
+
+Các chức năng sau chưa thuộc core hiện tại:
+
+- Lưu database.
+- Sinh số hóa đơn.
+- Xuất PDF, XML hoặc format thuế.
+- Kết nối hệ thống thuế.
+- Gửi email hoặc phát hành hóa đơn điện tử.
+
+Nên triển khai các chức năng này trong adapter/module của ứng dụng khách hàng hoặc module riêng, để giữ InvoiceLib nhỏ và dễ tái sử dụng.
