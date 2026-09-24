@@ -9,11 +9,13 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Logger;
 
 public class DefaultInvoiceCalculator implements InvoiceCalculator {
     private static final BigDecimal ONE_HUNDRED = BigDecimal.valueOf(100);
     private static final int MONEY_SCALE = 2;
     private static final RoundingMode MONEY_ROUNDING = RoundingMode.HALF_UP;
+    private static final Logger LOGGER = Logger.getLogger(DefaultInvoiceCalculator.class.getName());
 
     private final InvoiceValidator validator;
 
@@ -34,7 +36,9 @@ public class DefaultInvoiceCalculator implements InvoiceCalculator {
         BigDecimal totalPriceVat = BigDecimal.ZERO;
         BigDecimal totalVat = BigDecimal.ZERO;
 
-        for (InvoiceItemRequest item : items) {
+        for (int index = 0; index < items.size(); index++) {
+            int itemIndex = index;
+            InvoiceItemRequest item = items.get(index);
             BigDecimal subTotal = money(item.quantity().multiply(item.price()));
             BigDecimal priceVat = money(subTotal.multiply(item.vat()).divide(ONE_HUNDRED, MONEY_SCALE, MONEY_ROUNDING));
             BigDecimal subTotalVat = money(subTotal.add(priceVat));
@@ -51,13 +55,32 @@ public class DefaultInvoiceCalculator implements InvoiceCalculator {
             total = total.add(subTotal);
             totalPriceVat = totalPriceVat.add(priceVat);
             totalVat = totalVat.add(subTotalVat);
+
+                LOGGER.info(() -> String.format(
+                    "Calculated invoice item: index=%d, itemName=%s, quantity=%s, price=%s, vat=%s%%, priceVat=%s, subTotal=%s, subTotalVat=%s",
+                    itemIndex,
+                    item.itemName(),
+                    item.quantity(),
+                    money(item.price()),
+                    item.vat(),
+                    priceVat,
+                    subTotal,
+                    subTotalVat));
         }
 
-        return new InvoiceResponse(
+            InvoiceResponse response = new InvoiceResponse(
                 calculatedItems,
                 money(total),
                 money(totalPriceVat),
                 money(totalVat));
+
+            LOGGER.info(() -> String.format(
+                "Calculated invoice totals: total=%s, totalPriceVat=%s, totalVat=%s",
+                response.total(),
+                response.totalPriceVat(),
+                response.totalVat()));
+
+            return response;
     }
 
     private BigDecimal money(BigDecimal value) {
