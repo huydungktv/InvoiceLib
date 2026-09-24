@@ -40,6 +40,33 @@ InvoiceResponse response = calculator.calculate(List.of(request));
 
 Sau khi tính xong, map `InvoiceResponse` sang model của khách hàng hoặc response API riêng. Cách này giúp InvoiceLib không phụ thuộc vào tên field, annotation hoặc framework của từng khách hàng.
 
+## Xuất kết quả CSV
+
+Để tạo nội dung CSV từ kết quả tính toán:
+
+```java
+InvoiceCsvMapper csvMapper = new InvoiceCsvMapper();
+String csvContent = csvMapper.toCsv(response);
+```
+
+Có thể ghi nội dung ra file UTF-8 tại ứng dụng khách hàng:
+
+```java
+Files.writeString(
+	Path.of("invoice.csv"),
+	csvContent,
+	StandardCharsets.UTF_8
+);
+```
+
+CSV gồm các cột:
+
+```text
+rowType,itemName,quantity,price,vat,priceVat,subTotal,subTotalVat,total,totalPriceVat,totalVat
+```
+
+`ITEM` chứa dữ liệu từng item; `TOTAL` chứa `total`, `totalPriceVat` và `totalVat`. Mapper dùng CRLF làm line ending và tự escape giá trị CSV đặc biệt. Việc ghi file, upload hoặc trả response HTTP thuộc trách nhiệm của ứng dụng khách hàng.
+
 ## Tích hợp Maven
 
 ```xml
@@ -73,6 +100,7 @@ InvoiceLib chỉ trả về kết quả tính toán và không lưu dữ liệu.
 - Lưu output đã tính cùng version thư viện.
 - Quyết định định dạng tiền tệ và currency code ở domain của mình.
 - Không dùng số tiền đã format thành String để thực hiện phép tính tiếp theo.
+- Dùng `InvoiceCsvMapper` chỉ sau khi đã hoàn tất việc tính toán và kiểm tra `InvoiceResponse`.
 
 ## Tích hợp API HTTP
 

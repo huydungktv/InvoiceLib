@@ -102,6 +102,43 @@ result.items().forEach(item -> {
 });
 ```
 
+## Xuất hóa đơn thành CSV
+
+Sau khi có `InvoiceResponse`, dùng `InvoiceCsvMapper` để tạo nội dung CSV:
+
+```java
+import com.huydungktv.invoice.mapper.InvoiceCsvMapper;
+
+InvoiceCsvMapper csvMapper = new InvoiceCsvMapper();
+String csvContent = csvMapper.toCsv(result);
+```
+
+Thư viện trả về nội dung dạng `String` và không tự ghi file. Ứng dụng khách hàng quyết định tên file, encoding và nơi lưu:
+
+```java
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
+
+Files.writeString(
+	Path.of("invoice.csv"),
+	csvContent,
+	StandardCharsets.UTF_8
+);
+```
+
+CSV có một dòng header, các dòng `ITEM` và một dòng `TOTAL`:
+
+```text
+rowType,itemName,quantity,price,vat,priceVat,subTotal,subTotalVat,total,totalPriceVat,totalVat
+ITEM,Laptop,2,1000.00,10,200.00,2000.00,2200.00,,,
+TOTAL,,,,,,,,2000.00,200.00,2200.00
+```
+
+`InvoiceCsvMapper` tự escape item name chứa dấu phẩy, dấu nháy kép hoặc ký tự xuống dòng theo quy tắc CSV.
+
+Khi chạy ở mức log mặc định, mapper ghi ra console số lượng item khi bắt đầu và các tổng hóa đơn khi hoàn tất.
+
 ## Xử lý input không hợp lệ
 
 Input không hợp lệ sẽ ném `InvoiceValidationException`. Ứng dụng khách hàng nên bắt exception tại lớp biên, ghi log phù hợp và trả thông báo lỗi theo contract của chính ứng dụng đó.

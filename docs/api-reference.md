@@ -117,7 +117,7 @@ com.huydungktv.invoice.exception.InvoiceValidationException
 com.huydungktv.invoice.mapper.InvoiceCsvMapper
 ```
 
-Các class trong `validation`, `mapper` và `spi` là điểm mở rộng nội bộ hoặc dành cho các phiên bản tích hợp sau; không nên tự tạo dependency vào class chưa được ghi trong danh sách public API.
+Các class trong `validation` và `spi` là điểm mở rộng nội bộ hoặc dành cho các phiên bản tích hợp sau. `InvoiceCsvMapper` là API public được mô tả ở phần dưới.
 
 ## InvoiceCsvMapper
 
@@ -150,3 +150,12 @@ Quy tắc dòng:
 - Nếu truyền `null` cho `invoice`, method ném `NullPointerException`.
 
 API chỉ trả về nội dung CSV dạng `String`; việc chọn encoding, tên file và nơi lưu file thuộc về ứng dụng khách hàng.
+
+### Logging
+
+`InvoiceCsvMapper` sử dụng `java.util.logging.Logger` ở mức `INFO`:
+
+- Khi bắt đầu: ghi số lượng item.
+- Khi hoàn tất: ghi `total`, `totalPriceVat` và `totalVat`.
+
+Mapper hiện không ghi nội dung CSV đầy đủ vào log. Ứng dụng khách hàng có thể cấu hình handler và formatter của `java.util.logging` theo môi trường triển khai.
