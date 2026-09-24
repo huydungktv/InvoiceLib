@@ -67,6 +67,28 @@ rowType,itemName,quantity,price,vat,priceVat,subTotal,subTotalVat,total,totalPri
 
 `ITEM` chứa dữ liệu từng item; `TOTAL` chứa `total`, `totalPriceVat` và `totalVat`. Mapper dùng CRLF làm line ending và tự escape giá trị CSV đặc biệt. Việc ghi file, upload hoặc trả response HTTP thuộc trách nhiệm của ứng dụng khách hàng.
 
+## Tạo và phân phối PDF
+
+Ứng dụng khách hàng có thể tạo PDF từ cùng `InvoiceResponse`:
+
+```java
+InvoicePdfResult pdfResult = new InvoicePdfMapper().toPdf(response);
+String invoiceNumber = pdfResult.invoiceNumber();
+byte[] pdfBytes = pdfResult.pdfBytes();
+```
+
+Lưu file:
+
+```java
+Files.write(Path.of("invoice-" + invoiceNumber + ".pdf"), pdfBytes);
+```
+
+Hoặc trả `pdfBytes` trong HTTP response với content type `application/pdf`. InvoiceLib không tự lưu file, upload hoặc mở endpoint.
+
+Số hóa đơn được sinh theo `yyyyMMdd.HHmmss` bằng timezone mặc định của JVM. Vì độ chính xác chỉ đến giây, hệ thống có yêu cầu số duy nhất phải thêm cơ chế chống trùng ở application/database layer.
+
+PDF hiện dùng font chuẩn PDF; tên item có ký tự ngoài ASCII sẽ được thay bằng `?`. Nếu khách hàng cần tiếng Việt đầy đủ, cần một font Unicode được cấp phép và một phiên bản PDF mapper hỗ trợ nhúng font.
+
 ## Tích hợp Maven
 
 ```xml

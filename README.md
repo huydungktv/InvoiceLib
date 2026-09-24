@@ -218,6 +218,8 @@ com.huydungktv.invoice.service.InvoiceCalculator
 com.huydungktv.invoice.service.DefaultInvoiceCalculator
 com.huydungktv.invoice.exception.InvoiceValidationException
 com.huydungktv.invoice.mapper.InvoiceCsvMapper
+com.huydungktv.invoice.mapper.InvoicePdfMapper
+com.huydungktv.invoice.api.InvoicePdfResult
 ```
 
 Khuyến nghị sử dụng interface `InvoiceCalculator` trong code ứng dụng và chỉ khởi tạo `DefaultInvoiceCalculator` tại composition root hoặc cấu hình dependency injection của ứng dụng khách hàng.
@@ -246,6 +248,39 @@ TOTAL,,,,,,,,2000.00,200.00,2200.00
 ```
 
 Giá trị `itemName` có dấu phẩy, dấu nháy kép hoặc xuống dòng sẽ được escape theo chuẩn CSV.
+
+## Tạo PDF hóa đơn
+
+`InvoicePdfMapper` chuyển `InvoiceResponse` thành kết quả PDF gồm số hóa đơn và nội dung PDF dạng `byte[]`:
+
+```java
+InvoicePdfMapper pdfMapper = new InvoicePdfMapper();
+InvoicePdfResult pdfResult = pdfMapper.toPdf(invoice);
+
+String invoiceNumber = pdfResult.invoiceNumber();
+byte[] pdfBytes = pdfResult.pdfBytes();
+```
+
+Ghi PDF ra file ở ứng dụng khách hàng:
+
+```java
+Files.write(
+	Path.of("invoice-" + invoiceNumber + ".pdf"),
+	pdfBytes
+);
+```
+
+Số hóa đơn được sinh tại thời điểm gọi API theo timezone hệ thống, format `yyyyMMdd.HHmmss`.
+
+Ví dụ:
+
+```text
+20260924.135145
+```
+
+PDF chứa tiêu đề, số hóa đơn, bảng chi tiết item và ba tổng tiền: trước VAT, tiền VAT và sau VAT. API không tự ghi file hoặc gửi PDF qua HTTP.
+
+Lưu ý: bản PDF hiện dùng font chuẩn PDF với tập ký tự ASCII. Ký tự ngoài ASCII trong `itemName` sẽ được thay bằng `?`; nếu cần hiển thị đầy đủ tiếng Việt có dấu, cần bổ sung font Unicode nhúng vào PDF ở phiên bản tiếp theo.
 
 ## Cấu trúc project
 

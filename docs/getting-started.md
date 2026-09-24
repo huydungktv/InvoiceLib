@@ -139,6 +139,27 @@ TOTAL,,,,,,,,2000.00,200.00,2200.00
 
 Khi chạy ở mức log mặc định, mapper ghi ra console số lượng item khi bắt đầu và các tổng hóa đơn khi hoàn tất.
 
+## Tạo PDF hóa đơn
+
+Dùng `InvoicePdfMapper` sau khi đã tính được `InvoiceResponse`:
+
+```java
+import com.huydungktv.invoice.api.InvoicePdfResult;
+import com.huydungktv.invoice.mapper.InvoicePdfMapper;
+
+InvoicePdfResult pdfResult = new InvoicePdfMapper().toPdf(result);
+String invoiceNumber = pdfResult.invoiceNumber();
+
+Files.write(
+	Path.of("invoice-" + invoiceNumber + ".pdf"),
+	pdfResult.pdfBytes()
+);
+```
+
+Số hóa đơn có format `yyyyMMdd.HHmmss`, ví dụ `20260924.135145`. API trả về bytes và số hóa đơn, còn việc lưu file thuộc về ứng dụng khách hàng.
+
+PDF gồm tiêu đề, số hóa đơn, chi tiết từng item và tổng tiền trước VAT, tiền VAT, sau VAT. Font hiện tại hỗ trợ tập ký tự ASCII; ký tự có dấu trong tên item sẽ được thay bằng `?`.
+
 ## Xử lý input không hợp lệ
 
 Input không hợp lệ sẽ ném `InvoiceValidationException`. Ứng dụng khách hàng nên bắt exception tại lớp biên, ghi log phù hợp và trả thông báo lỗi theo contract của chính ứng dụng đó.

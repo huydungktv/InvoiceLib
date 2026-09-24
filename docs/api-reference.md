@@ -115,6 +115,8 @@ com.huydungktv.invoice.service.InvoiceCalculator
 com.huydungktv.invoice.service.DefaultInvoiceCalculator
 com.huydungktv.invoice.exception.InvoiceValidationException
 com.huydungktv.invoice.mapper.InvoiceCsvMapper
+com.huydungktv.invoice.mapper.InvoicePdfMapper
+com.huydungktv.invoice.api.InvoicePdfResult
 ```
 
 Các class trong `validation` và `spi` là điểm mở rộng nội bộ hoặc dành cho các phiên bản tích hợp sau. `InvoiceCsvMapper` là API public được mô tả ở phần dưới.
@@ -159,3 +161,48 @@ API chỉ trả về nội dung CSV dạng `String`; việc chọn encoding, tê
 - Khi hoàn tất: ghi `total`, `totalPriceVat` và `totalVat`.
 
 Mapper hiện không ghi nội dung CSV đầy đủ vào log. Ứng dụng khách hàng có thể cấu hình handler và formatter của `java.util.logging` theo môi trường triển khai.
+
+## InvoicePdfMapper
+
+Chuyển `InvoiceResponse` thành PDF:
+
+```java
+public InvoicePdfResult toPdf(InvoiceResponse invoice)
+```
+
+Kết quả `InvoicePdfResult` gồm:
+
+| Field | Ý nghĩa |
+|---|---|
+| `invoiceNumber` | Số hóa đơn được sinh theo `yyyyMMdd.HHmmss` |
+| `pdfBytes` | Nội dung PDF dạng `byte[]` |
+
+Ví dụ:
+
+```java
+InvoicePdfMapper mapper = new InvoicePdfMapper();
+InvoicePdfResult result = mapper.toPdf(invoiceResponse);
+
+Files.write(
+	Path.of("invoice-" + result.invoiceNumber() + ".pdf"),
+	result.pdfBytes()
+);
+```
+
+Quy tắc số hóa đơn:
+
+- Sinh tại thời điểm gọi `toPdf`.
+- Dùng timezone mặc định của JVM.
+- Format cố định: `yyyyMMdd.HHmmss`.
+- Ví dụ: `20260924.135145`.
+- Số hóa đơn chỉ có độ phân giải đến giây; ứng dụng cần đảm bảo chính sách duy nhất nếu có nhiều hóa đơn tạo trong cùng một giây.
+
+PDF bao gồm tiêu đề, số hóa đơn, dòng chi tiết item và tổng tiền trước VAT, tiền VAT, tiền sau VAT. API trả về bytes, không tự ghi file.
+
+### Logging PDF
+
+`InvoicePdfMapper` dùng `java.util.logging.Logger` mức `INFO` để ghi số hóa đơn, số lượng item khi bắt đầu và các tổng hóa đơn khi hoàn tất.
+
+### Giới hạn font
+
+PDF hiện dùng font chuẩn PDF và chuyển ký tự ngoài ASCII trong tên item thành `?`. Khi cần hỗ trợ tiếng Việt hoặc Unicode đầy đủ, cần bổ sung font Unicode nhúng và kiểm thử kích thước/layout PDF.
